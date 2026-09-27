@@ -518,7 +518,7 @@ wheels = [
 ]
 
 [[package]]
-name = "goit-pythonweb-hw-012"
+name = "goit-pythonweb-hw-12"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

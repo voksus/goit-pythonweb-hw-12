@@ -1,5 +1,5 @@
 [project]
-name = "goit-pythonweb-hw-012"
+name = "goit-pythonweb-hw-12"
 version = "0.1.0"
 description = "REST API для контактної книги з JWT-автентифікацією, ролями, Redis-кешуванням та Sphinx"
 readme = "README.md"
