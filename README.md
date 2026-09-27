@@ -117,16 +117,7 @@ uv run pytest --cov=src --cov-report=term-missing -vv
 ```bash
 uv run pytest --cov=src --cov-report=html
 ```
-
-Відкриття HTML-звіту покриття у браузері:
-- **Windows (PowerShell):**
-  ```powershell
-  Start-Process htmlcov/index.html
-  ```
-- **Linux / macOS:**
-  ```bash
-  open htmlcov/index.html || xdg-open htmlcov/index.html
-  ```
+> Для перегляду детального HTML-звіту з кольоровою підсвіткою рядків відкрийте файл `htmlcov/index.html` напряму у вашому веббраузері.
 
 ---
 
@@ -138,16 +129,7 @@ uv run pytest --cov=src --cov-report=html
 ```bash
 uv run sphinx-build -b html docs docs/_build/html
 ```
-
-Відкриття скомпільованої документації у браузері:
-- **Windows (PowerShell):**
-  ```powershell
-  Start-Process docs/_build/html/index.html
-  ```
-- **Linux / macOS:**
-  ```bash
-  open docs/_build/html/index.html || xdg-open docs/_build/html/index.html
-  ```
+> Для перегляду скомпільованої технічної документації відкрийте файл `docs/_build/html/index.html` напряму у вашому веббраузері.
 
 ---
 
@@ -180,28 +162,39 @@ uv run sphinx-build -b html docs docs/_build/html
    ```
    *Очікувана відповідь:* `PONG`
 
-2. **Авторизація та перевірка наявності ключів у кеші:**
-   - Зареєструйтесь або увійдіть у систему через Swagger UI (`POST /api/auth/login`).
+2. **Реєстрація тестового користувача та активація:**
+   - У Swagger UI (`http://localhost:8000/docs`) виконайте запит `POST /api/auth/register`:
+     ```json
+     {
+       "username": "john",
+       "email": "john@example.com",
+       "password": "Password123!"
+     }
+     ```
+   - Відкрийте Mailpit Web UI ([http://localhost:8025](http://localhost:8025)), знайдіть лист та підтвердіть пошту переходом за посиланням або викликом `GET /api/auth/confirmed_email/{token}`.
+
+3. **Авторизація та перевірка наявності ключів у кеші:**
+   - Виконайте `POST /api/auth/login` (або натисніть кнопку **Authorize 🔓** у Swagger UI, ввівши логін `john@example.com` та пароль `Password123!`).
    - Виконайте запит `GET /api/users/me`.
-   - Перевірте список ключів у Redis:
+   - Перевірте список закешованих ключів у Redis:
      ```bash
      docker compose exec redis redis-cli keys "user:*"
      ```
      *Приклад відповіді:* `1) "user:john@example.com"`
 
-3. **Перевірка часу життя (TTL) кешу:**
+4. **Перевірка залишкового часу життя (TTL) кешу:**
    ```bash
    docker compose exec redis redis-cli ttl "user:john@example.com"
    ```
    *Приклад відповіді:* `(integer) 115` *(залишок часу життя запису в секундах)*.
 
-4. **Перегляд закешованого JSON-об'єкта:**
+5. **Перегляд закешованого JSON-об'єкта:**
    ```bash
    docker compose exec redis redis-cli get "user:john@example.com"
    ```
 
-5. **Перевірка інвалідації кешу:**
-   - При оновленні аватара користувача (`PATCH /api/users/avatar`) або зміні пароля (`POST /api/auth/reset-password`) ключ автоматично видаляється з Redis, а наступний запит підвантажує актуальні дані з PostgreSQL.
+6. **Перевірка інвалідації кешу:**
+   - При зміні пароля (`POST /api/auth/reset-password`) або оновленні аватара (`PATCH /api/users/avatar`) ключ автоматично видаляється з Redis, а наступний запит підвантажує свіжі дані з PostgreSQL.
 
 ---
 
@@ -211,8 +204,8 @@ uv run sphinx-build -b html docs docs/_build/html
 
 1. Відкрийте вебінтерфейс перегляду листів: [http://localhost:8025](http://localhost:8025).
 2. **Сценарій підтвердження пошти:**
-   - Виконайте реєстрацію `POST /api/auth/register` (наприклад, `email: "tester@example.com"`).
-   - У вікні Mailpit з'явиться лист із темою *"Підтвердження електронної пошти"*.
+   - Виконайте реєстрацію `POST /api/auth/register`.
+   - У вікні Mailpit з'явиться лист із темою *"Підтвердження адреси електронної пошти"*.
    - Відкрийте лист і перейдіть за посиланням або скопіюйте токен для ендпоінта `GET /api/auth/confirmed_email/{token}`.
 3. **Сценарій скидання пароля:**
    - Виконайте `POST /api/auth/forgot-password` із передачею вашого підтвердженого email.
@@ -275,19 +268,44 @@ uv run sphinx-build -b html docs docs/_build/html
 
 ## ☁️ Розгортання у хмарі (Render)
 
-Застосунок повністю підготовлений до розгортання на платформі **Render.com** за допомогою стандартного `Dockerfile`.
+Застосунок оптимізовано для безкоштовного хмарного розгортання на платформі **Render.com** за допомогою Docker-образу.
 
-### Налаштування Web Service на Render:
-1. **Environment:** `Docker`
-2. **Build Command:** виконується автоматично згідно з інструкціями у `Dockerfile`.
-3. **Start Command:** контейнер автоматично виконує міграції `uv run alembic upgrade head` перед запуском сервера Uvicorn.
-4. **Змінні оточення (Environment Variables):**
-   - `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — параметри хмарної бази даних PostgreSQL.
-   - `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` — параметри підключення до хмарного Redis (наприклад, Redis Cloud або Upstash).
-   - `SECRET_KEY`, `ALGORITHM` — криптографічні ключі для випуску JWT токенів.
-   - `CLOUDINARY_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` — облікові дані для медіа-сховища.
-   - `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` — реквізити поштового сервера.
+### Особливості та архітектурні рішення для хмари:
+1. **Спільний регіон (Critical Rule):**  
+   Для мінімізації мережевих затримок та стабільного з'єднання базу даних PostgreSQL та вебсервіс обов'язково створювати в одному регіоні — **`Frankfurt (EU Central)`**.
+2. **Конфігурація PostgreSQL:**  
+   Платформа Render забороняє використання імені `postgres` як користувача. Застосовано стандартне ім'я `admin` та назву БД `mydb`. Підключення вебсервісу виконується через швидкісне внутрішнє ім'я хоста (**Internal Database URL**).
+3. **Підтримка динамічного порту (`$PORT`) та міграції:**  
+   Скрипт запуску `entrypoint.sh` автоматично адаптується під динамічний порт платформи `${PORT:-8000}`, коректно передає системні сигнали (SIGTERM) та виконує міграції `uv run alembic upgrade head` перед стартом сервера.
+4. **Робота без стороннього SMTP та стійкість до відсутності Redis:**  
+   - Увімкнення `MAIL_SIMULATE=True` та `DEBUG_SHOW_TOKEN_IN_LOGS=True` дозволяє ментору протестувати роботу пошти прямо через Swagger UI та логи Render без підняття зовнішнього SMTP.
+   - Механізм відмовостійкості (graceful fallback) у коді кешування дозволяє застосунку працювати стабільно навіть без окремого платного інстансу Redis у безкоштовному тарифі.
 
-### Публічне посилання на інтерактивну документацію:
-👉 **[https://vb2026api.onrender.com/docs](https://vb2026api.onrender.com/docs)**  
-*(Примітка: після фінального деплою можлива інша фактична адреса сервісу. Дивіться додаткову інформацію в коментарях до проєкту).*
+### Змінні оточення на Render (Environment Variables):
+
+| Ключ (Key) | Орієнтовне значення (Value) | Призначення |
+| :--- | :--- | :--- |
+| `DB_HOST` | `dpg-xxxxxxxxxxxx-a` | Внутрішнє ім'я хоста (Internal Database Hostname) |
+| `DB_PORT` | `5432` | Порт PostgreSQL |
+| `DB_USER` | `admin` | Обраний користувач БД на Render |
+| `DB_PASSWORD` | `ваш_пароль_бд` | Наданий пароль бази даних на Render |
+| `DB_NAME` | `mydb` | Обрана вами назва БД на Render |
+| `SECRET_KEY` | `довгий_рандомний_ключ_безпеки` | Секретний ключ криптографічного підпису JWT |
+| `ALGORITHM` | `HS256` | Алгоритм підпису JWT |
+| `REDIS_HOST` | `localhost` | Локальний хост (заглушка) або зовнішній Redis (Upstash) |
+| `REDIS_PORT` | `6379` | Порт Redis |
+| `MAIL_SIMULATE` | `True` | Локальна симуляція пошти для миттєвої активації (не працює в рамках Render) |
+| `DEBUG_SHOW_TOKEN_IN_LOGS` | `True` | Виведення посилань верифікації у журнал логів Render |
+| `CLOUDINARY_NAME` | `ваша_назва_хмари` | Це і нижче ваші параметри Cloudinary для тестування аватарів |
+| `CLOUDINARY_API_KEY` | `ваш_api_key` | -- |
+| `CLOUDINARY_API_SECRET` | `ваш_api_secret` | -- |
+
+---
+
+## 🔗 Офіційні посилання розгорнутого проєкту (Render)
+
+- 🌐 **Публічний інтерактивний Swagger UI:** **[https://vb2026api.onrender.com/docs](https://vb2026api.onrender.com/docs)**
+- 🩺 **Перевірка доступності сервісу (Health Check):** **[https://vb2026api.onrender.com/healthz](https://vb2026api.onrender.com/healthz)**
+
+> **Примітка щодо «холодного старту»:**  
+> На безкоштовному тарифі Render після періоду простою сервіс переходить у сплячий режим. Перше відкриття сторінки може тривати 30–50 секунд, після чого сервер працює у штатному високошвидкісному режимі.
