@@ -9,15 +9,14 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project
 
-# 2. Явне копіювання скрипту запуску та надання прав
-COPY entrypoint.sh ./
-RUN chmod +x entrypoint.sh
-
-# 3. Копіювання решти вихідного коду проєкту
+# 2. Копіювання вихідного коду проєкту
 COPY . .
+
+# 3. Надання прав на виконання скрипту запуску після копіювання
+RUN chmod +x entrypoint.sh
 
 # 4. Відкриття порту
 EXPOSE 8000
 
-# 5. Єдина команда старту (вимоги Render виконано, жодних ланцюжків у CMD)
-CMD ["./entrypoint.sh"]
+# 5. Запуск через оболонку sh (гарантований старт незалежно від вихідної ОС)
+CMD ["sh", "./entrypoint.sh"]
