@@ -1,0 +1,33 @@
+# Віртуальне оточення
+.venv/
+
+# Кеш байткоду CPython
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+
+# Змінні оточення та секрети
+.env
+.env.*
+!.env.example
+
+# Бази даних (якщо для тестів підключатиметься локальний SQLite)
+*.db
+*.sqlite3
+
+# Тестування та звіти про покриття коду
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Скомпільована документація Sphinx
+docs/_build/
+
+# Різні тимчасові файли та каталоги
+dist/
+.ruff_cache/
+*.log

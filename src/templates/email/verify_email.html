@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <title>Підтвердження електронної пошти</title>
+</head>
+<body style="font-family: system-ui, sans-serif; line-height: 1.6; color: #222;">
+    <h2>Вітаємо, {{ username }}!</h2>
+    <p>Дякуємо за реєстрацію в нашому REST API контактної книги.</p>
+    <p>Щоб активувати свій обліковий запис та мати змогу увійти, підтвердіть вашу адресу:</p>
+    <p>
+        <a href="{{ host }}api/auth/confirmed_email/{{ token }}"
+            style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Підтвердити пошту
+        </a>
+    </p>
+    <p style="font-size: 0.9em; color: #666;">
+        Або скопіюйте посилання у ваш браузер:<br>
+        {{ host }}api/auth/confirmed_email/{{ token }}
+    </p>
+    <p style="font-size: 0.85em; color: #888;">
+        Посилання дійсне впродовж {{ expires_minutes }} хвилин. Якщо ви не реєструвалися — просто проігноруйте цей лист.
+    </p>
+</body>
+</html>
